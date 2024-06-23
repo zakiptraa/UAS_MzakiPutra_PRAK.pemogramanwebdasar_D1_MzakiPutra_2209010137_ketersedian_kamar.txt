@@ -1,0 +1,201 @@
+
+
+        Room (Kamar):
+            id (integer, primary key)
+            name (string)
+            level (string)
+
+        Patient (Pasien):
+            id (integer, primary key)
+            name (string)
+            admission_date (date)
+            discharge_date (date, nullable)
+
+        RoomStatus (Status Kamar):
+            id (integer, primary key)
+            room_id (foreign key ke tabel rooms)
+            patient_id (foreign key ke tabel patients, nullable)
+            status (enum: 'available', 'occupied')
+            date (datetime)
+
+    bash
+
+php artisan make:model Room -m
+php artisan make:model Patient -m
+php artisan make:model RoomStatus -m
+
+
+php
+
+// app/Models/Room.php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Room extends Model
+{
+    protected $fillable = ['name', 'level'];
+    
+    public function statuses()
+    {
+        return $this->hasMany(RoomStatus::class);
+    }
+}
+
+php
+
+// app/Models/Patient.php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Patient extends Model
+{
+    protected $fillable = ['name', 'admission_date', 'discharge_date'];
+    
+    public function statuses()
+    {
+        return $this->hasMany(RoomStatus::class);
+    }
+}
+
+php
+
+// app/Models/RoomStatus.php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class RoomStatus extends Model
+{
+    protected $fillable = ['room_id', 'patient_id', 'status', 'date'];
+    
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
+    
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class);
+    }
+}
+
+
+
+php
+
+// database/migrations/YYYY_MM_DD_HHMMSS_create_rooms_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateRoomsTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('rooms', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('level');
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('rooms');
+    }
+}
+
+php
+
+// database/migrations/YYYY_MM_DD_HHMMSS_create_patients_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreatePatientsTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('patients', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->date('admission_date');
+            $table->date('discharge_date')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('patients');
+    }
+}
+
+php
+
+    // database/migrations/YYYY_MM_DD_HHMMSS_create_room_statuses_table.php
+    use Illuminate\Database\Migrations\Migration;
+    use Illuminate\Database\Schema\Blueprint;
+    use Illuminate\Support\Facades\Schema;
+
+    class CreateRoomStatusesTable extends Migration
+    {
+        public function up()
+        {
+            Schema::create('room_statuses', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('room_id');
+                $table->unsignedBigInteger('patient_id')->nullable();
+                $table->enum('status', ['available', 'occupied'])->default('available');
+                $table->dateTime('date');
+                $table->timestamps();
+
+                $table->foreign('room_id')->references('id')->on('rooms')->onDelete('cascade');
+                $table->foreign('patient_id')->references('id')->on('patients')->onDelete('set null');
+            });
+        }
+
+        public function down()
+        {
+            Schema::dropIfExists('room_statuses');
+        }
+    }
+
+
+
+
+php
+
+// Contoh penggunaan dalam controller atau script lainnya
+use App\Models\Room;
+use App\Models\Patient;
+use App\Models\RoomStatus;
+use Carbon\Carbon;
+
+// Masukkan data pasien ke dalam kamar
+$room = Room::find(1); // Contoh: Ambil kamar dengan ID 1
+$patient = Patient::create([
+    'name' => 'John Doe',
+    'admission_date' => Carbon::now(),
+]);
+
+$roomStatus = RoomStatus::create([
+    'room_id' => $room->id,
+    'patient_id' => $patient->id,
+    'status' => 'occupied',
+    'date' => Carbon::now(),
+]);
+
+// Keluarkan pasien dari kamar
+$patient->update(['discharge_date' => Carbon::now()]);
+
+$roomStatus->update([
+    'patient_id' => null,
+    'status' => 'available',
+    'date' => Carbon::now(),
+]);
+
+link:https://github.com/zakiptraa/UAS_MzakiPutra_PRAK.pemogramanwebdasar_D1_MzakiPutra_2209010137_ketersedian_kamar.txt/upload
